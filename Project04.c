@@ -153,53 +153,52 @@ int runRandom(struct TourStruct *tour)
 Name: main()
 Description: runs the main program
 **********************************************************/
-int main()
+int main(int argc, char *argv[])
 {
 	//Declare Variables
 	struct TourStruct tour;
 	FILE *fp;
 	char *line;
-    size_t len = 0;
-    ssize_t read;
+	size_t len = 0;
+	ssize_t read;
 	char filename[99];
 	char numLine[1024];
 	char *userInput = (char*) malloc(100);
 	int value;
 	int n = 0;
-
-	//ask user for file or random generator
-	printf("Enter filename: ");
-	fgets(filename, 99, stdin);
-	char *p = strchr(filename, '\n'); // p will point to the newline in filename
-	if(p) *p = 0; // if p is not null, terminate filename at p
 	
-	//open file read-only
-	fp = fopen(filename, "r");
-	
-	//check to make sure file is open
-	if(!fp)
-		perror("File not found");
+	if (argc != 2)
+		printf("Error: Usage is: 'project04 <filename>'.\n");
 	else
 	{
-		size_t len = 0;
-		//ssize_t read;
+		//open file read-only
+		fp = fopen(argv[1], "r");
+		
+		//check to make sure file is open
+		if(!fp)
+			perror("File not found");
+		else
+		{
+			size_t len = 0;
+			//ssize_t read;
 
-		printf("opening file: %s...\n", filename);
-		tour.cityLength = 0;
-		while ((read = getline(&line, &len, fp)) != -1) {
-			parseLine(&tour, line);
-			tour.cityLength++;
+			printf("opening file: %s...\n", argv[1]);
+			tour.cityLength = 0;
+			while ((read = getline(&line, &len, fp)) != -1) {
+				parseLine(&tour, line);
+				tour.cityLength++;
+			}
+			//print city array test
+			printResults(&tour);
+			runRandom(&tour);
+				
+			//close file
+			fclose(fp);
 		}
-		//print city array test
-		printResults(&tour);
-		runRandom(&tour);
-			
-		//close file
-		fclose(fp);
+		
+		//Exit
+		printf("\nHave a nice day.\n");
+		return 0;
 	}
-	
-	//Exit
-	printf("\nHave a nice day.\n");
-	return 0;
 }
 
