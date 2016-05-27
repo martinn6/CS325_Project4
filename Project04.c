@@ -2,9 +2,9 @@
  * Developers: Nick Martin (martinn6)
  *             Xisheng
  * 			   
- * Date: 20160422
+ * Date: 20160526
  * Project: Project 04
- * Description: Implement a greedy algorithm.
+ * Description: Implement an algorithim that approximates TSP.
  * *******************************************************************************************/
 
 #include <math.h>
@@ -14,10 +14,29 @@
 #include <time.h>
 #include <unistd.h>
 
-struct cities {
+#define MAXCITIES 1000
+
+//track city and coordinates from input file.
+struct Cities {
 	int id;
 	int x;
 	int y;
+};
+
+//track 
+struct Paths {
+	int distance;
+	int citya;
+	int cityb;
+};
+
+struct TourStruct {
+	int cityLength;
+	int pathLength;
+	int totalDistance;
+	struct Cities city[MAXCITIES];
+	struct Paths path[MAXCITIES];
+	
 };
 
 /**********************************************************
@@ -25,13 +44,13 @@ Name: printResults()
 Description: outputs the results to screen in the format:
 	[ArrayName] = [n0, n1, ... n[Array.Length]]
 **********************************************************/
-int printResults(struct cities *city, int length)
+int printResults(struct TourStruct *tour)
 {
-	for (int n = 0; n < length; n++)
+	for (int n = 0; n < tour->cityLength; n++)
 	{
-		printf("city[%d].id=%d; ", n, city[n].id);
-		printf("city[%d].x=%d; ", n, city[n].x);
-		printf("city[%d].y=%d\n", n, city[n].y);
+		printf("tour->city[%d].id=%d; ", n, tour->city[n].id);
+		printf("tour->city[%d].x=%d; ", n, tour->city[n].x);
+		printf("tour->city[%d].y=%d\n", n, tour->city[n].y);
 	}
 
 	return 0;
@@ -42,24 +61,89 @@ Name: parseNumLine()
 Description: outputs the results to a file in the format:
 	[ArrayName] = [n0, n1, ... n[Array.Length]]
 **********************************************************/
-int parseLine(struct cities *city, int n, char line[1024])
+
+int parseLine(struct TourStruct *tour, char line[1024])
 {
 	int x = 0;
-	int v[1000];
+	//int v[1000];
 	
-	//parse numbers from lines into array
+	// parse numbers from lines into array
 	char *pt;
 	pt = strtok(line," ");
+
 	while (pt != NULL) {
 		if(x==0)
-			city[n].id = atoi(pt);
+			tour->city[tour->cityLength].id = atoi(pt);
 		else if(x==1)
-			city[n].x = atoi(pt);
+			tour->city[tour->cityLength].x = atoi(pt);
 		else if(x==2)
-			city[n].y = atoi(pt);
+			tour->city[tour->cityLength].y = atoi(pt);
 		
 		pt = strtok (NULL, " ");
 		x++;
+	}
+
+	return(0);
+}
+
+
+/**********************************************************
+Name: runRandom()
+Description: Generates a random path between the cities.
+	Calculates distance between cities and total 
+	distance of tour.
+**********************************************************/
+int runRandom(struct TourStruct *tour)
+{
+	
+	int randomArray[1000];
+	
+	//populate randomArray from 0->length for random shuffle
+	for (int x = 0; x < tour->cityLength; x++)
+	{
+		randomArray[x] = x;
+	}
+	
+	//random shuffle 
+	for (int x = 0; x < tour->cityLength; x++)
+	{	
+		int temp = randomArray[x];
+		int randnum = rand() % tour->cityLength;
+		randomArray[x] = randomArray[randnum];
+		randomArray[randnum] = temp;
+	}
+	
+	//add paths between cities and calculates distance
+	tour->pathLength = 0;
+	for (int x = 0; x < tour->cityLength; x++)
+	{
+		tour->path[tour->pathLength].citya = tour->city[randomArray[x]].id;
+		if(x+1 < tour->cityLength)
+			tour->path[tour->pathLength].cityb = tour->city[randomArray[x+1]].id;
+		else
+			//back to start
+			tour->path[tour->pathLength].cityb = tour->city[randomArray[0]].id;
+			
+		//sqrt(pow((x1 - x2),2) + pow((y1 - y2),2)
+		tour->path[tour->pathLength].distance = 
+			sqrt(
+				pow(((float)tour->city[randomArray[x]].x /*x1*/ - (float)tour->city[randomArray[x+1]].x /*x2*/),2)
+				+
+				pow(((float)tour->city[randomArray[x]].y /*y1*/ - (float)tour->city[randomArray[x+1]].y /*y2*/),2)
+			);
+		
+		//increment total distance
+		tour->totalDistance += tour->path[tour->pathLength].distance;
+		tour->pathLength++;
+	}
+	
+	//test print
+	printf("Random Algorithim Path Test\nTotal Distance = %d\n", tour->totalDistance);
+	for (int x = 0; x < tour->pathLength; x++)
+	{
+		printf("tour->path[%d].citya=%d; ", x, tour->path[x].citya);
+		printf("tour->path[%d].cityb=%d; ", x, tour->path[x].cityb);
+		printf("tour->path[%d].distance=%d\n", x, tour->path[x].distance);
 	}
 
 	return(0);
@@ -72,7 +156,7 @@ Description: runs the main program
 int main()
 {
 	//Declare Variables
-	struct cities city[1000];
+	struct TourStruct tour;
 	FILE *fp;
 	char *line;
     size_t len = 0;
@@ -101,13 +185,14 @@ int main()
 		//ssize_t read;
 
 		printf("opening file: %s...\n", filename);
-		int n = 0;
+		tour.cityLength = 0;
 		while ((read = getline(&line, &len, fp)) != -1) {
-			parseLine(&city, n, line);
-			n++;
+			parseLine(&tour, line);
+			tour.cityLength++;
 		}
 		//print city array test
-		printResults(&city, n);
+		printResults(&tour);
+		runRandom(&tour);
 			
 		//close file
 		fclose(fp);
